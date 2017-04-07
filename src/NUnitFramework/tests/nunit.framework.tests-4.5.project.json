@@ -4,5 +4,8 @@
   },
   "frameworks": {
     "net45": {}
+  },
+  "dependencies": {
+    "NUnit3TestAdapter": "3.7.0"
   }
 }

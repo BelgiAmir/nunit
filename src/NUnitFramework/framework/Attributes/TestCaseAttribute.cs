@@ -35,7 +35,7 @@ namespace NUnit.Framework
     /// TestCaseAttribute is used to mark parameterized test cases
     /// and provide them with their arguments.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited=false)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
     public class TestCaseAttribute : NUnitAttribute, ITestBuilder, ITestCaseData, IImplyFixture
     {
         #region Constructors
@@ -48,7 +48,7 @@ namespace NUnit.Framework
         public TestCaseAttribute(params object[] arguments)
         {
             RunState = RunState.Runnable;
-            
+
             if (arguments == null)
                 Arguments = new object[] { null };
             else
@@ -63,7 +63,7 @@ namespace NUnit.Framework
         /// <param name="arg"></param>
         public TestCaseAttribute(object arg)
         {
-            RunState = RunState.Runnable;			
+            RunState = RunState.Runnable;
             Arguments = new object[] { arg };
             Properties = new PropertyBag();
         }
@@ -75,7 +75,7 @@ namespace NUnit.Framework
         /// <param name="arg2"></param>
         public TestCaseAttribute(object arg1, object arg2)
         {
-            RunState = RunState.Runnable;			
+            RunState = RunState.Runnable;
             Arguments = new object[] { arg1, arg2 };
             Properties = new PropertyBag();
         }
@@ -88,7 +88,7 @@ namespace NUnit.Framework
         /// <param name="arg3"></param>
         public TestCaseAttribute(object arg1, object arg2, object arg3)
         {
-            RunState = RunState.Runnable;			
+            RunState = RunState.Runnable;
             Arguments = new object[] { arg1, arg2, arg3 };
             Properties = new PropertyBag();
         }
@@ -182,10 +182,10 @@ namespace NUnit.Framework
         /// <summary>
         /// Gets or sets the reason for ignoring the test
         /// </summary>
-        public string Ignore 
-        { 
+        public string Ignore
+        {
             get { return IgnoreReason; }
-            set { IgnoreReason = value; } 
+            set { IgnoreReason = value; }
         }
 
         /// <summary>
@@ -204,8 +204,8 @@ namespace NUnit.Framework
         /// Gets or sets the reason for not running the test.
         /// </summary>
         /// <value>The reason.</value>
-        public string Reason 
-        { 
+        public string Reason
+        {
             get { return Properties.Get(PropertyNames.SkipReason) as string; }
             set { Properties.Set(PropertyNames.SkipReason, value); }
         }
@@ -244,111 +244,119 @@ namespace NUnit.Framework
         public string Category
         {
             get { return Properties.Get(PropertyNames.Category) as string; }
-            set 
-            { 
-                foreach (string cat in value.Split(new char[] { ',' }) )
-                    Properties.Add(PropertyNames.Category, cat); 
+            set
+            {
+                foreach (string cat in value.Split(new char[] { ',' }))
+                    Properties.Add(PropertyNames.Category, cat);
             }
         }
- 
+
         #endregion
 
         #region Helper Methods
 
         private TestCaseParameters GetParametersForTestCase(IMethodInfo method)
         {
-            TestCaseParameters parms;
+            IParameterInfo[] parameters = method.GetParameters();
+            TestCaseParameters testCaseParameters;
 
             try
             {
-                IParameterInfo[] parameters = method.GetParameters();
-                int argsNeeded = parameters.Length;
-                int argsProvided = Arguments.Length;
-
-                parms = new TestCaseParameters(this);
-
-                // Special handling for params arguments
-                if (argsNeeded > 0 && argsProvided >= argsNeeded - 1)
-                {
-                    IParameterInfo lastParameter = parameters[argsNeeded - 1];
-                    Type lastParameterType = lastParameter.ParameterType;
-                    Type elementType = lastParameterType.GetElementType();
-
-                    if (lastParameterType.IsArray && lastParameter.IsDefined<ParamArrayAttribute>(false))
-                    {
-                        if (argsProvided == argsNeeded)
-                        {
-                            Type lastArgumentType = parms.Arguments[argsProvided - 1].GetType();
-                            if (!lastParameterType.GetTypeInfo().IsAssignableFrom(lastArgumentType.GetTypeInfo()))
-                            {
-                                Array array = Array.CreateInstance(elementType, 1);
-                                array.SetValue(parms.Arguments[argsProvided - 1], 0);
-                                parms.Arguments[argsProvided - 1] = array;
-                            }
-                        }
-                        else
-                        {
-                            object[] newArglist = new object[argsNeeded];
-                            for (int i = 0; i < argsNeeded && i < argsProvided; i++)
-                                newArglist[i] = parms.Arguments[i];
-
-                            int length = argsProvided - argsNeeded + 1;
-                            Array array = Array.CreateInstance(elementType, length);
-                            for (int i = 0; i < length; i++)
-                                array.SetValue(parms.Arguments[argsNeeded + i - 1], i);
-
-                            newArglist[argsNeeded - 1] = array;
-                            parms.Arguments = newArglist;
-                            argsProvided = argsNeeded;
-                        }
-                    }
-                }
-
-                //Special handling for optional parameters
-                if (parms.Arguments.Length < argsNeeded)
-                {
-                    object[] newArgList = new object[parameters.Length];
-                    Array.Copy(parms.Arguments, newArgList, parms.Arguments.Length);
-
-                    //Fill with Type.Missing for remaining required parameters where optional
-                    for (var i = parms.Arguments.Length; i < parameters.Length; i++)
-                    {
-                        if (parameters[i].IsOptional)
-                            newArgList[i] = Type.Missing;
-                        else
-                        {
-                            if (i < parms.Arguments.Length)
-                                newArgList[i] = parms.Arguments[i];
-                            else
-                                throw new TargetParameterCountException(string.Format(
-                                    "Method requires {0} arguments but TestCaseAttribute only supplied {1}",
-                                    argsNeeded, 
-                                    argsProvided));
-                        }
-                    }
-                    parms.Arguments = newArgList;
-                }
-
-                //if (method.GetParameters().Length == 1 && method.GetParameters()[0].ParameterType == typeof(object[]))
-                //    parms.Arguments = new object[]{parms.Arguments};
-
-                // Special handling when sole argument is an object[]
-                if (argsNeeded == 1 && method.GetParameters()[0].ParameterType == typeof(object[]))
-                {
-                    if (argsProvided > 1 ||
-                        argsProvided == 1 && parms.Arguments[0].GetType() != typeof(object[]))
-                    {
-                        parms.Arguments = new object[] { parms.Arguments };
-                    }
-                }
-
-                if (argsProvided == argsNeeded)
-                    PerformSpecialConversions(parms.Arguments, parameters);
+                object[] matchedParametes = MatchArgumentsToParameters(parameters, Arguments);
+                testCaseParameters = new TestCaseParameters(matchedParametes);
             }
             catch (Exception ex)
             {
-                parms = new TestCaseParameters(ex);
+                testCaseParameters = new TestCaseParameters(ex);
             }
+
+            return testCaseParameters;
+        }
+
+        private object[] MatchArgumentsToParameters(IParameterInfo[] parameters, object[] arguments)
+        {
+            object[] parms;
+
+
+            int argsNeeded = parameters.Length;
+            int argsProvided = arguments.Length;
+
+            parms = new object[argsNeeded];
+
+            // Special handling for params arguments
+            if (argsNeeded > 0 && argsProvided >= argsNeeded - 1)
+            {
+                IParameterInfo lastParameter = parameters[argsNeeded - 1];
+                Type lastParameterType = lastParameter.ParameterType;
+                Type elementType = lastParameterType.GetElementType();
+
+                if (lastParameterType.IsArray && lastParameter.IsDefined<ParamArrayAttribute>(false))
+                {
+                    if (argsProvided == argsNeeded)
+                    {
+                        Type lastArgumentType = parms[argsProvided - 1].GetType();
+                        if (!lastParameterType.GetTypeInfo().IsAssignableFrom(lastArgumentType.GetTypeInfo()))
+                        {
+                            Array array = Array.CreateInstance(elementType, 1);
+                            array.SetValue(parms[argsProvided - 1], 0);
+                            parms[argsProvided - 1] = array;
+                        }
+                    }
+                    else
+                    {
+                        object[] newArglist = new object[argsNeeded];
+                        for (int i = 0; i < argsNeeded && i < argsProvided; i++)
+                            newArglist[i] = parms[i];
+
+                        int length = argsProvided - argsNeeded + 1;
+                        Array array = Array.CreateInstance(elementType, length);
+                        for (int i = 0; i < length; i++)
+                            array.SetValue(parms[argsNeeded + i - 1], i);
+
+                        newArglist[argsNeeded - 1] = array;
+                        parms = newArglist;
+                        argsProvided = argsNeeded;
+                    }
+                }
+            }
+
+            //Special handling for optional parameters
+            if (parms.Length < argsNeeded)
+            {
+                object[] newArgList = new object[parameters.Length];
+                Array.Copy(parms, newArgList, parms.Length);
+
+                //Fill with Type.Missing for remaining required parameters where optional
+                for (var i = parms.Length; i < parameters.Length; i++)
+                {
+                    if (parameters[i].IsOptional)
+                        newArgList[i] = Type.Missing;
+                    else
+                    {
+                        if (i < parms.Length)
+                            newArgList[i] = parms[i];
+                        else
+                            throw new TargetParameterCountException(string.Format(
+                                "Method requires {0} arguments but TestCaseAttribute only supplied {1}",
+                                argsNeeded,
+                                argsProvided));
+                    }
+                }
+                parms = newArgList;
+            }
+
+            // Special handling when sole argument is an object[]
+            if (argsNeeded == 1 && parameters[0].ParameterType == typeof(object[]))
+            {
+                if (argsProvided > 1 ||
+                    argsProvided == 1 && parms[0].GetType() != typeof(object[]))
+                {
+                    parms = new object[] { parms };
+                }
+            }
+
+            if (argsProvided == argsNeeded)
+                PerformSpecialConversions(parms, parameters);
 
             return parms;
         }
@@ -397,7 +405,7 @@ namespace NUnit.Framework
 
                 if (convert)
                 {
-                    Type convertTo = targetType.GetTypeInfo().IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>) ? 
+                    Type convertTo = targetType.GetTypeInfo().IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>) ?
                         targetType.GetGenericArguments()[0] : targetType;
                     arglist[i] = Convert.ChangeType(arg, convertTo, System.Globalization.CultureInfo.InvariantCulture);
                 }
@@ -429,7 +437,7 @@ namespace NUnit.Framework
                 test.RunState != RunState.Ignored)
             {
                 PlatformHelper platformHelper = new PlatformHelper();
-                
+
                 if (!platformHelper.IsPlatformSupported(this))
                 {
                     test.RunState = RunState.Skipped;
