@@ -80,6 +80,7 @@
     <Compile Include="Assertions\LowTrustFixture.cs" />
     <Compile Include="Assertions\WarningTests.cs" />
     <Compile Include="Attributes\CommandWrapperTests.cs" />
+    <Compile Include="Attributes\ParallelizableAttributeTests.cs" />
     <Compile Include="Attributes\RetryAttributeTests.cs" />
     <Compile Include="Attributes\RandomAttributeTests.cs" />
     <Compile Include="Attributes\RangeAttributeTests.cs" />
@@ -119,6 +120,7 @@
     <Compile Include="Internal\Results\TestResultOutputTests.cs" />
     <Compile Include="Internal\Results\TestResultSuccessTests.cs" />
     <Compile Include="Internal\Results\TestResultTests.cs" />
+    <Compile Include="Internal\TestMethodTests.cs" />
     <Compile Include="Internal\TestNameGeneratorTests.cs" />
     <Compile Include="Internal\TestNamingTests.cs" />
     <Compile Include="Internal\TypeHelperTests.cs" />

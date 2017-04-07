@@ -135,9 +135,10 @@ namespace NUnit.Framework
         {
             get
             {
-                Test test = _testExecutionContext?.CurrentTest;
-                if (test != null)
-                    return AssemblyHelper.GetDirectoryName(test.TypeInfo.Assembly);
+                Assembly assembly = _testExecutionContext?.CurrentTest?.TypeInfo?.Assembly;
+
+                if (assembly != null)
+                    return AssemblyHelper.GetDirectoryName(assembly);
 
 #if NETSTANDARD1_6
                 // Test is null, we may be loading tests rather than executing.
@@ -388,7 +389,15 @@ namespace NUnit.Framework
                 get { return _test.Properties; }
             }
 
-#endregion
+            /// <summary>
+            /// The arguments to use in creating the test or empty array if none are required.
+            /// </summary>
+            public object[] Arguments
+            {
+                get { return _test.Arguments; }
+            }
+
+            #endregion
         }
 
 #endregion

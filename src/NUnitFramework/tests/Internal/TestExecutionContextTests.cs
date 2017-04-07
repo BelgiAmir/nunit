@@ -256,6 +256,12 @@ namespace NUnit.Framework.Internal
             Assert.That(TestExecutionContext.CurrentContext.CurrentTest.Properties.Get("Answer"), Is.EqualTo(42));
         }
 
+        [TestCase(123, "abc")]
+        public void TestCanAccessItsOwnArguments(int i, string s)
+        {
+            Assert.That(TestExecutionContext.CurrentContext.CurrentTest.Arguments, Is.EqualTo(new object[] {123, "abc"}));
+        }
+
 #if ASYNC
         [Test]
         public async Task AsyncTestCanAccessItsOwnName()
@@ -300,6 +306,14 @@ namespace NUnit.Framework.Internal
             Assert.That(TestExecutionContext.CurrentContext.CurrentTest.Properties.Get("Answer"), Is.EqualTo(42));
             await YieldAsync();
             Assert.That(TestExecutionContext.CurrentContext.CurrentTest.Properties.Get("Answer"), Is.EqualTo(42));
+        }
+
+        [TestCase(123, "abc")]
+        public async Task AsyncTestCanAccessItsOwnArguments(int i, string s)
+        {
+            Assert.That(TestExecutionContext.CurrentContext.CurrentTest.Arguments, Is.EqualTo(new object[] {123, "abc"}));
+            await YieldAsync();
+            Assert.That(TestExecutionContext.CurrentContext.CurrentTest.Arguments, Is.EqualTo(new object[] {123, "abc"}));
         }
 #endif
 
@@ -581,9 +595,12 @@ namespace NUnit.Framework.Internal
         [Test]
         public void CanAccessTestWorker()
         {
-            Assert.That(_fixtureContext.TestWorker, Is.Not.Null);
-            Assert.That(_setupContext.TestWorker, Is.SameAs(_fixtureContext.TestWorker));
-            Assert.That(TestExecutionContext.CurrentContext.TestWorker, Is.SameAs(_setupContext.TestWorker));
+            if (TestExecutionContext.CurrentContext.Dispatcher is ParallelWorkItemDispatcher)
+            {
+                Assert.That(_fixtureContext.TestWorker, Is.Not.Null);
+                Assert.That(_setupContext.TestWorker, Is.SameAs(_fixtureContext.TestWorker));
+                Assert.That(TestExecutionContext.CurrentContext.TestWorker, Is.SameAs(_setupContext.TestWorker));
+            }
         }
 
 #if ASYNC
@@ -949,7 +966,7 @@ namespace NUnit.Framework.Internal
         #region Cross-domain Tests
 
 #if !PORTABLE && !NETSTANDARD1_6
-        [Test]
+        [Test, Platform(Exclude="Mono", Reason="Intermittent failures")]
         public void CanCreateObjectInAppDomain()
         {
             AppDomain domain = AppDomain.CreateDomain(
@@ -1004,7 +1021,7 @@ namespace NUnit.Framework.Internal
     }
 
 #if !PORTABLE && !NETSTANDARD1_6
-    [TestFixture]
+    [TestFixture, Platform(Exclude="Mono", Reason="Intermittent failures")]
     public class TextExecutionContextInAppDomain
     {
         private RunsInAppDomain _runsInAppDomain;
