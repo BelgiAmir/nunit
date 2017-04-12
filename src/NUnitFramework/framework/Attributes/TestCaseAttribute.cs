@@ -258,12 +258,12 @@ namespace NUnit.Framework
         private TestCaseParameters GetParametersForTestCase(IMethodInfo method)
         {
             IParameterInfo[] parameters = method.GetParameters();
-            TestCaseParameters testCaseParameters;
+            TestCaseParameters testCaseParameters = new TestCaseParameters(this);
 
             try
             {
                 object[] matchedParametes = MatchArgumentsToParameters(parameters, Arguments);
-                testCaseParameters = new TestCaseParameters(matchedParametes);
+                testCaseParameters.Arguments = matchedParametes;
             }
             catch (Exception ex)
             {
@@ -275,13 +275,11 @@ namespace NUnit.Framework
 
         private object[] MatchArgumentsToParameters(IParameterInfo[] parameters, object[] arguments)
         {
-            object[] parms;
-
+            object[] parms = new object[Arguments.Length];
+            Array.Copy(Arguments, parms, Arguments.Length);
 
             int argsNeeded = parameters.Length;
             int argsProvided = arguments.Length;
-
-            parms = new object[argsNeeded];
 
             // Special handling for params arguments
             if (argsNeeded > 0 && argsProvided >= argsNeeded - 1)
